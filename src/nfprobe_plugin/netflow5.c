@@ -22,13 +22,13 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id: netflow5.c,v 1.1 2006/11/19 15:16:07 paolo Exp $ */
+/* $Id: netflow5.c,v 1.1.1.1 2006/11/19 15:16:07 paolo Exp $ */
 
 #include "common.h"
 #include "treetype.h"
 #include "nfprobe_plugin.h"
 
-RCSID("$Id: netflow5.c,v 1.1 2006/11/19 15:16:07 paolo Exp $");
+RCSID("$Id: netflow5.c,v 1.1.1.1 2006/11/19 15:16:07 paolo Exp $");
 
 /*
  * This is the Cisco Netflow(tm) version 5 packet format
