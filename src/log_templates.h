@@ -57,6 +57,10 @@ EXT void TPL_push_src_as(u_char **, const struct db_cache *);
 EXT void TPL_push_dst_as(u_char **, const struct db_cache *);
 EXT void TPL_push_src_port(u_char **, const struct db_cache *);
 EXT void TPL_push_dst_port(u_char **, const struct db_cache *);
+#ifdef WITH_GEOIP
+EXT void TPL_push_src_country(u_char **, const struct db_cache *);
+EXT void TPL_push_dst_country(u_char **, const struct db_cache *);
+#endif
 EXT void TPL_push_tos(u_char **, const struct db_cache *);
 EXT void TPL_push_proto(u_char **, const struct db_cache *);
 EXT void TPL_push_id(u_char **, const struct db_cache *);

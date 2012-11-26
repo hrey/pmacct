@@ -227,6 +227,10 @@ void write_stats_header_formatted(u_int64_t what_to_count, u_int8_t have_wtc)
     if (what_to_count & COUNT_DST_NMASK) printf("DST_MASK  "); 
     if (what_to_count & (COUNT_SRC_PORT|COUNT_SUM_PORT)) printf("SRC_PORT  ");
     if (what_to_count & COUNT_DST_PORT) printf("DST_PORT  "); 
+#ifdef ENABLE_GEOIP
+    if (what_to_count & (COUNT_SRC_COUNTRY|COUNT_SUM_COUNTRY)) printf("SRC_COUNTRY  ");
+    if (what_to_count & COUNT_DST_COUNTRY) printf("DST_COUNTRY  "); 
+#endif
     if (what_to_count & COUNT_TCPFLAGS) printf("TCP_FLAGS  "); 
     if (what_to_count & COUNT_IP_PROTO) printf("PROTOCOL    ");
     if (what_to_count & COUNT_IP_TOS) printf("TOS    ");
@@ -289,6 +293,10 @@ void write_stats_header_csv(u_int64_t what_to_count, u_int8_t have_wtc)
     printf("DST_MASK,");
     printf("SRC_PORT,");
     printf("DST_PORT,");
+#ifdef WITH_GEOIP
+    printf("SRC_COUNTRY,");
+    printf("DST_COUNTRY,");
+#endif
     printf("TCP_FLAGS,");
     printf("PROTOCOL,");
     printf("TOS,");
@@ -507,6 +515,16 @@ int main(int argc,char **argv)
 	  count_token_int[count_index] = COUNT_DST_PORT;
 	  what_to_count |= COUNT_DST_PORT;
 	}
+#ifdef WITH_GEOIP
+        else if (!strcmp(count_token[count_index], "src_country")) {
+	  count_token_int[count_index] = COUNT_SRC_COUNTRY;
+	  what_to_count |= COUNT_SRC_COUNTRY;
+	}
+        else if (!strcmp(count_token[count_index], "dst_country")) {
+	  count_token_int[count_index] = COUNT_DST_COUNTRY;
+	  what_to_count |= COUNT_DST_COUNTRY;
+	}
+#endif
         else if (!strcmp(count_token[count_index], "proto")) {
 	  count_token_int[count_index] = COUNT_IP_PROTO;
 	  what_to_count |= COUNT_IP_PROTO;
@@ -1624,6 +1642,18 @@ int main(int argc,char **argv)
 	  if (want_output == PRINT_OUTPUT_FORMATTED) printf("%-5u     ", acc_elem->primitives.dst_port);
 	  else if (want_output == PRINT_OUTPUT_CSV) printf("%u,", acc_elem->primitives.dst_port);
 	}
+
+#ifdef WITH_GEOIP
+	if (!have_wtc || (what_to_count & (COUNT_SRC_COUNTRY|COUNT_SUM_COUNTRY))) {
+	  if (want_output == PRINT_OUTPUT_FORMATTED) printf("%-5u     ", acc_elem->primitives.src_country);
+	  else if (want_output == PRINT_OUTPUT_CSV) printf("%u,", acc_elem->primitives.src_country);
+	}
+
+	if (!have_wtc || (what_to_count & COUNT_DST_COUNTRY)) {
+	  if (want_output == PRINT_OUTPUT_FORMATTED) printf("%-5u     ", acc_elem->primitives.dst_country);
+	  else if (want_output == PRINT_OUTPUT_CSV) printf("%u,", acc_elem->primitives.dst_country);
+	}
+#endif
 
 	if (!have_wtc || (what_to_count & COUNT_TCPFLAGS)) {
 	  if (want_output == PRINT_OUTPUT_FORMATTED) printf("%-6u     ", acc_elem->tcp_flags);

@@ -25,13 +25,13 @@ shell> su - postgres
 
 [ ... ]
 
-- To create v7 tables:
+- To create v9 tables:
   * psql -d template1 -f /tmp/pmacct-create-db.pgsql
-  * psql -d pmacct -f /tmp/pmacct-create-table_v7.pgsql
+  * psql -d pmacct -f /tmp/pmacct-create-table_v9.pgsql
 
-- To use v7 tables:
-  * data will be available in 'acct_v7' table of 'pmacct' DB.
-  * Add 'sql_table_version: 7' line to your configuration.
+- To use v9 tables:
+  * data will be available in 'acct_v9' table of 'pmacct' DB.
+  * Add 'sql_table_version: 9' line to your configuration.
 
 Similarly, BGP tables:
 
@@ -52,6 +52,7 @@ mode. Since v6 unified mode is no longer supported.
 
 - To understand difference between the various table versions: 
   * Do you need any of the BGP primitives ? Then look the next section.
+  * Do you need GeoIP ? Then you have to use v9.
   * Do you need TCP flags ? Then you have to use v7.
   * Do you need both IP addresses and AS numbers in the same table ? Then you have to use v6.
   * Do you need packet classification ? Then you have to use v5.
@@ -130,10 +131,10 @@ NOTE: mind to specify EVERYTIME which SQL table version you
 intend to adhere to by using either of the following rules:
 
 When using commandline options:
-  * -v [ 1 | 2 | 3 | 4 | 5 | 6 | 7 ]
+  * -v [ 1 | 2 | 3 | 4 | 5 | 6 | 7 | 9 ]
 
 When using configuration directives:
-  * sql_table_version: [ 1 | 2 | 3 | 4 | 5 | 6 | 7 ]
+  * sql_table_version: [ 1 | 2 | 3 | 4 | 5 | 6 | 7 | 9 ]
   * sql_table_type: [ bgp ]
 
 NOTE: specifying a non-documented SQL table profile will result

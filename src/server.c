@@ -298,6 +298,10 @@ void mask_elem(struct pkt_primitives *d1, struct pkt_bgp_primitives *d2, struct 
   if (w & COUNT_DST_AS) d1->dst_as = s1->dst_as; 
   if (w & COUNT_SRC_PORT) d1->src_port = s1->src_port; 
   if (w & COUNT_DST_PORT) d1->dst_port = s1->dst_port; 
+#ifdef WITH_GEOIP
+  if (w & COUNT_SRC_COUNTRY) d1->src_country = s1->src_country; 
+  if (w & COUNT_DST_COUNTRY) d1->dst_country = s1->dst_country; 
+#endif
   if (w & COUNT_IP_TOS) d1->tos = s1->tos;
   if (w & COUNT_IP_PROTO) d1->proto = s1->proto; 
   if (w & COUNT_IN_IFACE) d1->ifindex_in = s1->ifindex_in; 

@@ -504,6 +504,9 @@ int PG_evaluate_primitives(int primitive)
     else if (lh.what_to_count & COUNT_SUM_HOST) what_to_count |= COUNT_SUM_HOST;
     else if (lh.what_to_count & COUNT_SUM_NET) what_to_count |= COUNT_SUM_NET;
     else if (lh.what_to_count & COUNT_SUM_AS) what_to_count |= COUNT_SUM_AS;
+#ifdef WITH_GEOIP
+    else if (lh.what_to_count & COUNT_SUM_COUNTRY) what_to_count |= COUNT_SUM_COUNTRY;
+#endif
     else {
       if (lh.what_to_count & COUNT_DST_AS) what_to_count |= COUNT_SRC_AS;
       else fakes |= FAKE_SRC_HOST;
@@ -681,6 +684,36 @@ int PG_evaluate_primitives(int primitive)
     values[primitive].handler = where[primitive].handler = count_dst_port_handler;
     primitive++;
   }
+
+#ifdef WITH_GEOIP
+  if (lh.sql_table_version >= 9 && what_to_count & (COUNT_SRC_COUNTRY|COUNT_SUM_COUNTRY)) {
+    if (primitive) {
+      strncat(insert_clause, ", ", SPACELEFT(insert_clause));
+      strncat(values[primitive].string, ", ", sizeof(values[primitive].string));
+      strncat(where[primitive].string, " AND ", sizeof(where[primitive].string));
+    }
+    strncat(insert_clause, "country_src", SPACELEFT(insert_clause));
+    strncat(values[primitive].string, "\'%s\'", SPACELEFT(values[primitive].string));
+    strncat(where[primitive].string, "country_src=\'%u\'", SPACELEFT(where[primitive].string));
+    values[primitive].type = where[primitive].type = COUNT_SRC_COUNTRY;
+    values[primitive].handler = where[primitive].handler = count_src_country_handler;
+    primitive++;
+  }
+
+  if (lh.sql_table_version >= 9 && what_to_count & COUNT_DST_COUNTRY) {
+    if (primitive) {
+      strncat(insert_clause, ", ", SPACELEFT(insert_clause));
+      strncat(values[primitive].string, ", ", sizeof(values[primitive].string));
+      strncat(where[primitive].string, " AND ", sizeof(where[primitive].string));
+    }
+    strncat(insert_clause, "country_dst", SPACELEFT(insert_clause));
+    strncat(values[primitive].string, "\'%s\'", SPACELEFT(values[primitive].string));
+    strncat(where[primitive].string, "country_dst=\'%s\'", SPACELEFT(where[primitive].string));
+    values[primitive].type = where[primitive].type = COUNT_DST_COUNTRY;
+    values[primitive].handler = where[primitive].handler = count_dst_country_handler;
+    primitive++;
+  }
+#endif
 
   if (what_to_count & COUNT_IP_TOS) {
     int count_it = FALSE;

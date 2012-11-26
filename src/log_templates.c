@@ -32,7 +32,7 @@ struct template_entry *build_template(struct template_header *th)
   u_char *te;
   u_int16_t tot_size = 0;
 
-  th->num = 17;
+  th->num = 19;
 
   te = malloc(th->num*sizeof(struct template_entry));  
   memset(te, 0, th->num*sizeof(struct template_entry));
@@ -92,7 +92,21 @@ struct template_entry *build_template(struct template_header *th)
   tot_size += ptr->size;
   ptr++;
 
-  ptr->tag = COUNT_IP_TOS; 
+#ifdef WITH_GEOIP
+  ptr->tag = COUNT_SRC_COUNTRY;
+  ptr->size = sizeof(dummy.primitives.src_country);
+  tot_size += ptr->size;
+  ptr++;
+
+  ptr->tag = COUNT_DST_COUNTRY;
+  ptr->size = sizeof(dummy.primitives.dst_country);
+  tot_size += ptr->size;
+  ptr++;
+#else
+  th->num--; th->num--;
+#endif
+
+  ptr->tag = COUNT_IP_TOS;
   ptr->size = sizeof(dummy.primitives.tos);
   tot_size += ptr->size;
   ptr++;
@@ -176,6 +190,14 @@ void set_template_funcs(struct template_header *th, struct template_entry *head)
     case COUNT_DST_PORT:
       template_funcs[cnt] = TPL_push_dst_port;
       break;
+#ifdef WITH_GEOIP
+    case COUNT_SRC_COUNTRY:
+      template_funcs[cnt] = TPL_push_src_country;
+      break;
+    case COUNT_DST_COUNTRY:
+      template_funcs[cnt] = TPL_push_dst_country;
+      break;
+#endif
     case COUNT_IP_TOS: 
       template_funcs[cnt] = TPL_push_tos;
       break;
@@ -305,6 +327,24 @@ void TPL_push_dst_port(u_char **dst, const struct db_cache *src)
   *dst += size;
 }
 
+#ifdef WITH_GEOIP
+void TPL_push_src_country(u_char **dst, const struct db_cache *src)
+{
+  int size = sizeof(src->primitives.src_country);
+
+  memcpy(*dst, &src->primitives.src_country, size);
+  *dst += size;
+}
+
+void TPL_push_dst_country(u_char **dst, const struct db_cache *src)
+{
+  int size = sizeof(src->primitives.dst_country);
+
+  memcpy(*dst, &src->primitives.dst_country, size);
+  *dst += size;
+}
+#endif
+
 void TPL_push_tos(u_char **dst, const struct db_cache *src)
 {
   int size = sizeof(src->primitives.tos);
@@ -426,6 +466,14 @@ void TPL_pop(u_char *src, struct db_cache *dst, struct template_header *th, u_ch
     case COUNT_DST_PORT:
       memcpy(&dst->primitives.dst_port, ptr, sz);
       break;
+#ifdef WITH_GEOIP
+    case COUNT_SRC_COUNTRY:
+      memcpy(&dst->primitives.src_country, ptr, sz);
+      break;
+    case COUNT_DST_COUNTRY:
+      memcpy(&dst->primitives.dst_country, ptr, sz);
+      break;
+#endif
     case COUNT_IP_TOS:
       memcpy(&dst->primitives.tos, ptr, sz);
       break;
@@ -516,6 +564,14 @@ void TPL_check_sizes(struct template_header *th, struct db_cache *elem, u_char *
     case COUNT_DST_PORT:
       if (teptr->size > sizeof(elem->primitives.dst_port)) goto exit_lane;
       break;
+#ifdef WITH_GEOIP
+    case COUNT_SRC_COUNTRY:
+      if (teptr->size > sizeof(elem->primitives.src_country)) goto exit_lane;
+      break;
+    case COUNT_DST_COUNTRY:
+      if (teptr->size > sizeof(elem->primitives.dst_country)) goto exit_lane;
+      break;
+#endif
     case COUNT_IP_TOS:
       if (teptr->size > sizeof(elem->primitives.tos)) goto exit_lane;
       break;

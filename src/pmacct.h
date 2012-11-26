@@ -66,6 +66,10 @@
 #endif
 #endif
 
+#ifdef WITH_GEOIP
+# include <GeoIP.h>
+#endif
+
 #include "pmacct-build.h"
 
 #if !defined INET_ADDRSTRLEN 

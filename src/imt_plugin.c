@@ -77,6 +77,9 @@ void imt_plugin(int pipe_fd, struct configuration *cfgptr, void *ptr)
     insert_func = sum_host_insert;
   else if (config.what_to_count & COUNT_SUM_PORT) insert_func = sum_port_insert;
   else if (config.what_to_count & COUNT_SUM_AS) insert_func = sum_as_insert;
+#ifdef WITH_GEOIP
+  else if (config.what_to_count & COUNT_SUM_COUNTRY) insert_func = sum_country_insert;
+#endif
 #if defined (HAVE_L2)
   else if (config.what_to_count & COUNT_SUM_MAC) insert_func = sum_mac_insert;
 #endif
@@ -406,6 +409,19 @@ void sum_port_insert(struct pkt_data *data, struct pkt_bgp_primitives *pbgp)
   data->primitives.src_port = port;
   insert_accounting_structure(data, pbgp);
 }
+
+#ifdef WITH_GEOIP
+void sum_country_insert(struct pkt_data *data, struct pkt_bgp_primitives *pbgp)
+{
+  u_int32_t country;
+
+  country = data->primitives.dst_country;
+  data->primitives.dst_country = 0;
+  insert_accounting_structure(data, pbgp);
+  data->primitives.src_country = country;
+  insert_accounting_structure(data, pbgp);
+}
+#endif
 
 void sum_as_insert(struct pkt_data *data, struct pkt_bgp_primitives *pbgp)
 {

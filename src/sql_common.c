@@ -50,6 +50,9 @@ void sql_set_insert_func()
     insert_func = sql_sum_host_insert;
   else if (config.what_to_count & COUNT_SUM_PORT) insert_func = sql_sum_port_insert;
   else if (config.what_to_count & COUNT_SUM_AS) insert_func = sql_sum_as_insert;
+#ifdef WITH_GEOIP
+  else if (config.what_to_count & COUNT_SUM_COUNTRY) insert_func = sql_sum_country_insert;
+#endif
 #if defined (HAVE_L2)
   else if (config.what_to_count & COUNT_SUM_MAC) insert_func = sql_sum_mac_insert;
 #endif
@@ -730,6 +733,19 @@ void sql_sum_as_insert(struct pkt_data *data, struct pkt_bgp_primitives *pbgp, s
   sql_cache_insert(data, pbgp, idata);
 }
 
+#ifdef WITH_GEOIP
+void sql_sum_country_insert(struct pkt_data *data, struct pkt_bgp_primitives *pbgp, struct insert_data *idata)
+{
+  u_int32_t country;
+
+  country = data->primitives.dst_country;
+  data->primitives.dst_country = 0;
+  sql_cache_insert(data, pbgp, idata);
+  data->primitives.src_country = country;
+  sql_cache_insert(data, pbgp, idata);
+}
+#endif
+
 #if defined (HAVE_L2)
 void sql_sum_mac_insert(struct pkt_data *data, struct pkt_bgp_primitives *pbgp, struct insert_data *idata)
 {
@@ -832,6 +848,13 @@ int sql_evaluate_primitives(int primitive)
     exit_plugin(1);
   }
 
+  if (config.what_to_count & (COUNT_SRC_COUNTRY|COUNT_DST_COUNTRY|COUNT_SUM_COUNTRY) &&
+      config.sql_table_version < 9) {
+    Log(LOG_ERR, "ERROR ( %s/%s ): SQL tables < v9 do not support GeoIP.\n",
+        config.name, config.type);
+    exit_plugin(1);
+  }
+
   if (config.sql_optimize_clauses) {
     what_to_count = config.what_to_count;
     assume_custom_table = TRUE;
@@ -857,6 +880,15 @@ int sql_evaluate_primitives(int primitive)
 
     if (config.what_to_count & (COUNT_DST_HOST|COUNT_DST_NET)) what_to_count |= COUNT_DST_HOST;
     else fakes |= FAKE_DST_HOST;
+
+#ifdef WITH_GEOIP
+    if (config.what_to_count & COUNT_SRC_COUNTRY) what_to_count |= COUNT_SRC_COUNTRY;
+    else if (config.what_to_count & COUNT_SUM_COUNTRY) what_to_count |= COUNT_SUM_COUNTRY;
+    else fakes |= FAKE_SRC_COUNTRY;
+
+    if (config.what_to_count & COUNT_DST_COUNTRY) what_to_count |= COUNT_DST_COUNTRY;
+    else fakes |= FAKE_DST_COUNTRY;
+#endif
 
     if (config.what_to_count & COUNT_AS_PATH) what_to_count |= COUNT_AS_PATH;
     else fakes |= FAKE_AS_PATH;
@@ -1115,6 +1147,46 @@ int sql_evaluate_primitives(int primitive)
       }
     }
   }
+
+#ifdef WITH_GEOIP
+  if (what_to_count & (COUNT_SRC_COUNTRY|COUNT_SUM_COUNTRY)) {
+    if ((config.sql_table_version < 9 || config.sql_table_version >= SQL_TABLE_VERSION_BGP) && !assume_custom_table) {
+      Log(LOG_ERR, "ERROR ( %s/%s ): GeoIP accounting not supported for selected sql_table_version/_type. Read about SQL table versioning or consider using sql_optimize_clauses.\n", config.name, config.type);
+      exit_plugin(1);
+    }
+
+    if (primitive) {
+      strncat(insert_clause, ", ", SPACELEFT(insert_clause));
+      strncat(values[primitive].string, delim_buf, SPACELEFT(values[primitive].string));
+      strncat(where[primitive].string, " AND ", SPACELEFT(where[primitive].string));
+    }
+    strncat(insert_clause, "country_src", SPACELEFT(insert_clause));
+    strncat(values[primitive].string, "\'%s\'", SPACELEFT(values[primitive].string));
+    strncat(where[primitive].string, "country_src=\'%s\'", SPACELEFT(where[primitive].string));
+    values[primitive].type = where[primitive].type = COUNT_SRC_COUNTRY;
+    values[primitive].handler = where[primitive].handler = count_src_country_handler;
+    primitive++;
+  }
+
+  if (what_to_count & COUNT_DST_COUNTRY) {
+    if ((config.sql_table_version < 9 || config.sql_table_version >= SQL_TABLE_VERSION_BGP) && !assume_custom_table) {
+      Log(LOG_ERR, "ERROR ( %s/%s ): GeoIP accounting not supported for selected sql_table_version/_type. Read about SQL table versioning or consider using sql_optimize_clauses.\n", config.name, config.type);
+      exit_plugin(1);
+    }
+
+    if (primitive) {
+      strncat(insert_clause, ", ", SPACELEFT(insert_clause));
+      strncat(values[primitive].string, delim_buf, SPACELEFT(values[primitive].string));
+      strncat(where[primitive].string, " AND ", SPACELEFT(where[primitive].string));
+    }
+    strncat(insert_clause, "country_dst", SPACELEFT(insert_clause));
+    strncat(values[primitive].string, "\'%s\'", SPACELEFT(values[primitive].string));
+    strncat(where[primitive].string, "country_dst=\'%s\'", SPACELEFT(where[primitive].string));
+    values[primitive].type = where[primitive].type = COUNT_DST_COUNTRY;
+    values[primitive].handler = where[primitive].handler = count_dst_country_handler;
+    primitive++;
+  }
+#endif
 
   if (what_to_count & (COUNT_SRC_AS|COUNT_SUM_AS)) {
     if (primitive) {
@@ -1882,6 +1954,54 @@ int sql_evaluate_primitives(int primitive)
       }
     }
   }
+
+#ifdef WITH_GEOIP
+  if (fakes & FAKE_SRC_COUNTRY) {
+    int count_it = FALSE;
+
+    if ((config.sql_table_version < 9 || config.sql_table_version >= SQL_TABLE_VERSION_BGP) && !assume_custom_table) {
+      fakes ^= FAKE_SRC_COUNTRY;
+    }
+    else count_it = TRUE;
+
+    if (count_it) {
+      if (primitive) {
+        strncat(insert_clause, ", ", SPACELEFT(insert_clause));
+        strncat(values[primitive].string, delim_buf, SPACELEFT(values[primitive].string));
+        strncat(where[primitive].string, " AND ", SPACELEFT(where[primitive].string));
+    }
+      strncat(insert_clause, "country_src", SPACELEFT(insert_clause));
+      strncat(values[primitive].string, "\'%s\'", SPACELEFT(values[primitive].string));
+      strncat(where[primitive].string, "country_src=\'%s\'", SPACELEFT(where[primitive].string));
+      values[primitive].type = where[primitive].type = FAKE_SRC_COUNTRY;
+      values[primitive].handler = where[primitive].handler = fake_country_handler;
+      primitive++;
+    }
+  }
+
+  if (fakes & FAKE_DST_COUNTRY) {
+    int count_it = FALSE;
+
+    if ((config.sql_table_version < 9 || config.sql_table_version >= SQL_TABLE_VERSION_BGP) && !assume_custom_table) {
+      fakes ^= FAKE_DST_COUNTRY;
+    }
+    else count_it = TRUE;
+
+    if (count_it) {
+      if (primitive) {
+        strncat(insert_clause, ", ", SPACELEFT(insert_clause));
+        strncat(values[primitive].string, delim_buf, SPACELEFT(values[primitive].string));
+        strncat(where[primitive].string, " AND ", SPACELEFT(where[primitive].string));
+    }
+      strncat(insert_clause, "country_dst", SPACELEFT(insert_clause));
+      strncat(values[primitive].string, "\'%s\'", SPACELEFT(values[primitive].string));
+      strncat(where[primitive].string, "country_dst=\'%s\'", SPACELEFT(where[primitive].string));
+      values[primitive].type = where[primitive].type = FAKE_DST_COUNTRY;
+      values[primitive].handler = where[primitive].handler = fake_country_handler;
+      primitive++;
+    }
+  }
+#endif
 
   if (fakes & FAKE_SRC_AS) {
     if (primitive) {

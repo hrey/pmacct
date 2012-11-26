@@ -153,6 +153,9 @@ struct configuration {
   char *networks_file;
   int networks_cache_entries;
   char *ports_file;
+#ifdef WITH_GEOIP
+  char *countries_file;
+#endif
   int refresh_maps;
   char *a_filter;
   int bpfp_a_num;

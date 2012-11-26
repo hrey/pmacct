@@ -83,6 +83,9 @@ struct channels_list_entry {
   struct aggregate_filter agg_filter; 			/* filter aggregates basing on L2-L4 primitives */
   struct sampling s;
   struct plugins_list_entry *plugin;			/* backpointer to the plugin the actual channel belongs to */
+#ifdef WITH_GEOIP
+  GeoIP *geoip;
+#endif
 };
 
 #if (defined __PLUGIN_HOOKS_C)

@@ -233,6 +233,9 @@ static const struct _dictionary_line dictionary[] = {
   {"networks_mask", cfg_key_networks_mask},
   {"networks_file", cfg_key_networks_file},
   {"networks_cache_entries", cfg_key_networks_cache_entries},
+#ifdef WITH_GEOIP
+  {"countries_file", cfg_key_countries_file},
+#endif
   {"refresh_maps", cfg_key_refresh_maps},
   {"ports_file", cfg_key_ports_file},
   {"imt_path", cfg_key_imt_path},

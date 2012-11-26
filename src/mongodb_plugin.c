@@ -459,6 +459,20 @@ void MongoDB_cache_purge(struct chained_cache *queue[], int index)
       sprintf(misc_str, "%u", data->dst_port);
       bson_append_string(bson_elem, "port_dst", misc_str);
     }
+#ifdef WITH_GEOIP
+    if (config.what_to_count & COUNT_SRC_COUNTRY) {
+      if (data->src_country > 0)
+        bson_append_string(bson_elem, "country_src", GeoIP_code_by_id(data->src_country));
+      else
+        bson_append_null(bson_elem, "country_src");
+    }
+    if (config.what_to_count & COUNT_DST_COUNTRY) {
+      if (data->dst_country > 0)
+        bson_append_string(bson_elem, "country_dst", GeoIP_code_by_id(data->dst_country));
+      else
+        bson_append_null(bson_elem, "country_dst");
+    }
+#endif
     if (config.what_to_count & COUNT_TCPFLAGS) {
       sprintf(misc_str, "%u", queue[j]->tcp_flags);
       bson_append_string(bson_elem, "tcp_flags", misc_str);

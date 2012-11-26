@@ -93,6 +93,9 @@ void print_plugin(int pipe_fd, struct configuration *cfgptr, void *ptr)
     insert_func = P_sum_host_insert;
   else if (config.what_to_count & COUNT_SUM_PORT) insert_func = P_sum_port_insert;
   else if (config.what_to_count & COUNT_SUM_AS) insert_func = P_sum_as_insert;
+#ifdef WITH_GEOIP
+  else if (config.what_to_count & COUNT_SUM_COUNTRY) insert_func = P_sum_country_insert;
+#endif
 #if defined (HAVE_L2)
   else if (config.what_to_count & COUNT_SUM_MAC) insert_func = P_sum_mac_insert;
 #endif
@@ -636,6 +639,12 @@ void P_cache_purge(struct chained_cache *queue[], int index)
       if (config.what_to_count & COUNT_DST_NMASK) fprintf(f, "%-3u       ", data->dst_nmask);
       if (config.what_to_count & COUNT_SRC_PORT) fprintf(f, "%-5u     ", data->src_port);
       if (config.what_to_count & COUNT_DST_PORT) fprintf(f, "%-5u     ", data->dst_port);
+#ifdef WITH_GEOIP
+      if (config.what_to_count & COUNT_SRC_COUNTRY) fprintf(f, "%5s        ",
+                                                            GeoIP_code_by_id(data->src_country));
+      if (config.what_to_count & COUNT_DST_COUNTRY) fprintf(f, "%5s        ",
+                                                            GeoIP_code_by_id(data->dst_country));
+#endif
       if (config.what_to_count & COUNT_TCPFLAGS) fprintf(f, "%-3u        ", queue[j]->tcp_flags);
 
       if (config.what_to_count & COUNT_IP_PROTO) {
@@ -732,6 +741,12 @@ void P_cache_purge(struct chained_cache *queue[], int index)
       if (config.what_to_count & COUNT_DST_NMASK) fprintf(f, "%u,", data->dst_nmask);
       if (config.what_to_count & COUNT_SRC_PORT) fprintf(f, "%u,", data->src_port);
       if (config.what_to_count & COUNT_DST_PORT) fprintf(f, "%u,", data->dst_port);
+#ifdef WITH_GEOIP
+      if (config.what_to_count & COUNT_SRC_COUNTRY) fprintf(f, "%s,",
+                                                            GeoIP_code_by_id(data->src_country));
+      if (config.what_to_count & COUNT_DST_COUNTRY) fprintf(f, "%s,",
+                                                            GeoIP_code_by_id(data->dst_country));
+#endif
       if (config.what_to_count & COUNT_TCPFLAGS) fprintf(f, "%u,", queue[j]->tcp_flags);
 
       if (config.what_to_count & COUNT_IP_PROTO) {
@@ -796,6 +811,10 @@ void P_write_stats_header_formatted(FILE *f)
   if (config.what_to_count & COUNT_DST_NMASK) fprintf(f, "DST_MASK  ");
   if (config.what_to_count & COUNT_SRC_PORT) fprintf(f, "SRC_PORT  ");
   if (config.what_to_count & COUNT_DST_PORT) fprintf(f, "DST_PORT  ");
+#ifdef WITH_GEOIP
+  if (config.what_to_count & COUNT_SRC_COUNTRY) fprintf(f, "SRC_COUNTRY  ");
+  if (config.what_to_count & COUNT_DST_COUNTRY) fprintf(f, "DST_COUNTRY  ");
+#endif
   if (config.what_to_count & COUNT_TCPFLAGS) fprintf(f, "TCP_FLAGS  ");
   if (config.what_to_count & COUNT_IP_PROTO) fprintf(f, "PROTOCOL    ");
   if (config.what_to_count & COUNT_IP_TOS) fprintf(f, "TOS    ");
@@ -842,6 +861,10 @@ void P_write_stats_header_csv(FILE *f)
   if (config.what_to_count & COUNT_DST_NMASK) fprintf(f, "DST_MASK,");
   if (config.what_to_count & COUNT_SRC_PORT) fprintf(f, "SRC_PORT,");
   if (config.what_to_count & COUNT_DST_PORT) fprintf(f, "DST_PORT,");
+#ifdef WITH_GEOIP
+  if (config.what_to_count & COUNT_SRC_COUNTRY) fprintf(f, "SRC_COUNTRY,");
+  if (config.what_to_count & COUNT_DST_COUNTRY) fprintf(f, "DST_COUNTRY,");
+#endif
   if (config.what_to_count & COUNT_TCPFLAGS) fprintf(f, "TCP_FLAGS,");
   if (config.what_to_count & COUNT_IP_PROTO) fprintf(f, "PROTOCOL,");
   if (config.what_to_count & COUNT_IP_TOS) fprintf(f, "TOS,");
@@ -900,6 +923,19 @@ void P_sum_as_insert(struct pkt_data *data, struct pkt_bgp_primitives *pbgp)
   data->primitives.src_as = asn;
   P_cache_insert(data, pbgp);
 }
+
+#ifdef WITH_GEOIP
+void P_sum_country_insert(struct pkt_data *data, struct pkt_bgp_primitives *pbgp)
+{
+  u_int32_t country;
+
+  country = data->primitives.dst_country;
+  data->primitives.dst_country = 0;
+  P_cache_insert(data, pbgp);
+  data->primitives.src_country = country;
+  P_cache_insert(data, pbgp);
+}
+#endif
 
 #if defined (HAVE_L2)
 void P_sum_mac_insert(struct pkt_data *data, struct pkt_bgp_primitives *pbgp)

@@ -135,6 +135,10 @@ int cfg_key_aggregate(char *filename, char *name, char *value_ptr)
     else if (!strcmp(count_token, "sum")) value |= COUNT_SUM_HOST;
     else if (!strcmp(count_token, "src_port")) value |= COUNT_SRC_PORT;
     else if (!strcmp(count_token, "dst_port")) value |= COUNT_DST_PORT;
+#ifdef WITH_GEOIP
+    else if (!strcmp(count_token, "src_country")) value |= COUNT_SRC_COUNTRY;
+    else if (!strcmp(count_token, "dst_country")) value |= COUNT_DST_COUNTRY;
+#endif
     else if (!strcmp(count_token, "proto")) value |= COUNT_IP_PROTO;
 #if defined (HAVE_L2)
     else if (!strcmp(count_token, "src_mac")) value |= COUNT_SRC_MAC;
@@ -150,6 +154,9 @@ int cfg_key_aggregate(char *filename, char *name, char *value_ptr)
     else if (!strcmp(count_token, "sum_net")) value |= COUNT_SUM_NET;
     else if (!strcmp(count_token, "sum_as")) value |= COUNT_SUM_AS;
     else if (!strcmp(count_token, "sum_port")) value |= COUNT_SUM_PORT;
+#ifdef WITH_GEOIP
+    else if (!strcmp(count_token, "sum_country")) value |= COUNT_SUM_COUNTRY;
+#endif
     else if (!strcmp(count_token, "tag")) value |= COUNT_ID;
     else if (!strcmp(count_token, "tag2")) value |= COUNT_ID2;
     else if (!strcmp(count_token, "flows")) value |= COUNT_FLOWS;
@@ -1515,6 +1522,27 @@ int cfg_key_ports_file(char *filename, char *name, char *value_ptr)
 
   return changes;
 }
+
+#ifdef WITH_GEOIP
+int cfg_key_countries_file(char *filename, char *name, char *value_ptr)
+{
+  struct plugins_list_entry *list = plugins_list;
+  int changes = 0;
+
+  if (!name) for (; list; list = list->next, changes++) list->cfg.countries_file = value_ptr;
+  else {
+    for (; list; list = list->next) {
+      if (!strcmp(name, list->name)) {
+        list->cfg.countries_file = value_ptr;
+        changes++;
+        break;
+      }
+    }
+  }
+
+  return changes;
+}
+#endif
 
 int cfg_key_refresh_maps(char *filename, char *name, char *value_ptr)
 {

@@ -124,6 +124,9 @@ EXT void Accumulate_Counters(struct pkt_data *, struct acc *);
 #endif
 EXT void sum_host_insert(struct pkt_data *, struct pkt_bgp_primitives *);
 EXT void sum_port_insert(struct pkt_data *, struct pkt_bgp_primitives *);
+#ifdef WITH_GEOIP
+EXT void sum_country_insert(struct pkt_data *, struct pkt_bgp_primitives *);
+#endif
 EXT void sum_as_insert(struct pkt_data *, struct pkt_bgp_primitives *);
 #if defined HAVE_L2
 EXT void sum_mac_insert(struct pkt_data *, struct pkt_bgp_primitives *);

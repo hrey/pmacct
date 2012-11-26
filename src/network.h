@@ -354,6 +354,10 @@ struct pkt_primitives {
   u_int8_t dst_nmask;
   as_t src_as;
   as_t dst_as;
+#ifdef WITH_GEOIP
+  u_int32_t src_country;
+  u_int32_t dst_country;
+#endif
   u_int16_t src_port;
   u_int16_t dst_port;
   u_int8_t tos;

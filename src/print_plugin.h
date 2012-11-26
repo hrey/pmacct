@@ -60,6 +60,9 @@ EXT unsigned int P_cache_modulo(struct pkt_primitives *, struct pkt_bgp_primitiv
 EXT void P_sum_host_insert(struct pkt_data *, struct pkt_bgp_primitives *);
 EXT void P_sum_port_insert(struct pkt_data *, struct pkt_bgp_primitives *);
 EXT void P_sum_as_insert(struct pkt_data *, struct pkt_bgp_primitives *);
+#ifdef WITH_GEOIP
+EXT void P_sum_country_insert(struct pkt_data *, struct pkt_bgp_primitives *);
+#endif
 #if defined (HAVE_L2)
 EXT void P_sum_mac_insert(struct pkt_data *, struct pkt_bgp_primitives *);
 #endif

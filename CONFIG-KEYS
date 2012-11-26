@@ -270,6 +270,10 @@ DESC:		full pathname to a file containing a list of (known/interesting/meaningfu
 		to rewrite as zero port numbers not matching any port defined in the list. Indeed, this
 		makes sense only if aggregating on either 'src_port' or 'dst_port' primitives.
 
+KEY:            countries_file
+DESC:           full pathname to a MaxMind country database. The directive allows one to derive src_country
+                and dst_country from src_host and dst_host.
+
 KEY:		sql_db
 DESC:		defines the SQL database to use. Remember that when using the SQLite3 plugin, this
 		directive refers to the full path to the database file (default: 'pmacct', SQLite 3.x

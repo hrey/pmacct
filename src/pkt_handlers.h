@@ -46,6 +46,12 @@ EXT void src_host_handler(struct channels_list_entry *, struct packet_ptrs *, ch
 EXT void dst_host_handler(struct channels_list_entry *, struct packet_ptrs *, char **);
 EXT void src_port_handler(struct channels_list_entry *, struct packet_ptrs *, char **);
 EXT void dst_port_handler(struct channels_list_entry *, struct packet_ptrs *, char **);
+#ifdef WITH_GEOIP
+EXT void src_country_handler(struct channels_list_entry *, struct packet_ptrs *, char **);
+EXT void dst_country_handler(struct channels_list_entry *, struct packet_ptrs *, char **);
+EXT void src_country_handler_clear(struct channels_list_entry *, struct packet_ptrs *, char **);
+EXT void dst_country_handler_clear(struct channels_list_entry *, struct packet_ptrs *, char **);
+#endif
 EXT void ip_tos_handler(struct channels_list_entry *, struct packet_ptrs *, char **);
 EXT void ip_proto_handler(struct channels_list_entry *, struct packet_ptrs *, char **);
 EXT void tcp_flags_handler(struct channels_list_entry *, struct packet_ptrs *, char **);

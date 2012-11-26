@@ -813,6 +813,14 @@ void evaluate_sums(u_int64_t *wtc, char *name, char *type)
       Log(LOG_WARNING, "WARN ( %s/%s ): SUM aggregation is to be used alone. Resetting other aggregation methods.\n", name, type);
     }
   }
+#ifdef WITH_GEOIP
+  else if (*wtc & COUNT_SUM_COUNTRY) {
+    if (*wtc != COUNT_SUM_COUNTRY) {
+      *wtc = COUNT_SUM_COUNTRY;
+      Log(LOG_WARNING, "WARN ( %s/%s ): SUM aggregation is to be used alone. Resetting other aggregation methods.\n", name, type);
+    }
+  }
+#endif
 
   if (tag) *wtc |= COUNT_ID;
   if (tag2) *wtc |= COUNT_ID2;

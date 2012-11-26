@@ -80,7 +80,7 @@ void evaluate_packet_handlers()
     }
 #endif
 
-    if (channels_list[index].aggregation & (COUNT_SRC_HOST|COUNT_SRC_NET|COUNT_SUM_HOST|COUNT_SUM_NET)) {
+    if (channels_list[index].aggregation & (COUNT_SRC_HOST|COUNT_SRC_NET|COUNT_SRC_COUNTRY|COUNT_SUM_HOST|COUNT_SUM_NET|COUNT_SUM_COUNTRY)) {
       if (channels_list[index].aggregation & (COUNT_SRC_NET|COUNT_SUM_NET)) {
         if (channels_list[index].plugin->cfg.nfacctd_net & NF_NET_BGP) {
 	  channels_list[index].phandler[primitives] = bgp_src_net_handler;
@@ -105,16 +105,33 @@ void evaluate_packet_handlers()
           else if (config.acct_type == ACCT_SF) channels_list[index].phandler[primitives] = SF_src_host_handler;
           primitives++;
         }
+
+#ifdef WITH_GEOIP
+        if (channels_list[index].aggregation & (COUNT_SRC_COUNTRY|COUNT_SUM_COUNTRY)) {
+          channels_list[index].phandler[primitives] = src_country_handler;
+          primitives++;
+        }
+#endif
       }
       else {
         if (config.acct_type == ACCT_PM) channels_list[index].phandler[primitives] = src_host_handler;
         else if (config.acct_type == ACCT_NF) channels_list[index].phandler[primitives] = NF_src_host_handler;
         else if (config.acct_type == ACCT_SF) channels_list[index].phandler[primitives] = SF_src_host_handler;
 	primitives++;
+
+#ifdef WITH_GEOIP
+        if (channels_list[index].aggregation & (COUNT_SRC_COUNTRY|COUNT_SUM_COUNTRY)) {
+          if (channels_list[index].aggregation & (COUNT_SRC_HOST|COUNT_SUM_HOST))
+            channels_list[index].phandler[primitives] = src_country_handler;
+          else
+            channels_list[index].phandler[primitives] = src_country_handler_clear;
+          primitives++;
+        }
+#endif
       }
     }
 
-    if (channels_list[index].aggregation & (COUNT_DST_HOST|COUNT_DST_NET|COUNT_SUM_HOST|COUNT_SUM_NET)) {
+    if (channels_list[index].aggregation & (COUNT_DST_HOST|COUNT_DST_NET|COUNT_DST_COUNTRY|COUNT_SUM_HOST|COUNT_SUM_NET|COUNT_SUM_COUNTRY)) {
       if (channels_list[index].aggregation & (COUNT_DST_NET|COUNT_SUM_NET)) {
         if (channels_list[index].plugin->cfg.nfacctd_net & NF_NET_BGP) {
           channels_list[index].phandler[primitives] = bgp_dst_net_handler;
@@ -139,12 +156,29 @@ void evaluate_packet_handlers()
           else if (config.acct_type == ACCT_SF) channels_list[index].phandler[primitives] = SF_dst_host_handler;
           primitives++;
 	}
+
+#ifdef WITH_GEOIP
+        if (channels_list[index].aggregation & (COUNT_DST_COUNTRY|COUNT_SUM_COUNTRY)) {
+          channels_list[index].phandler[primitives] = dst_country_handler;
+          primitives++;
+        }
+#endif
       }
       else { 
 	if (config.acct_type == ACCT_PM) channels_list[index].phandler[primitives] = dst_host_handler;
         else if (config.acct_type == ACCT_NF) channels_list[index].phandler[primitives] = NF_dst_host_handler;
         else if (config.acct_type == ACCT_SF) channels_list[index].phandler[primitives] = SF_dst_host_handler;
         primitives++;
+
+#ifdef WITH_GEOIP
+        if (channels_list[index].aggregation & (COUNT_DST_COUNTRY|COUNT_SUM_COUNTRY)) {
+          if (channels_list[index].aggregation & (COUNT_DST_HOST|COUNT_SUM_HOST))
+            channels_list[index].phandler[primitives] = dst_country_handler;
+          else
+            channels_list[index].phandler[primitives] = dst_country_handler_clear;
+          primitives++;
+        }
+#endif
       }
     }
 
@@ -881,6 +915,56 @@ void dst_port_handler(struct channels_list_entry *chptr, struct packet_ptrs *ppt
     pdata->primitives.dst_port = ntohs(((struct my_tlhdr *) pptrs->tlh_ptr)->dst_port);
   else pdata->primitives.dst_port = 0;
 }
+
+#ifdef WITH_GEOIP
+static void init_geoip(struct channels_list_entry *chptr)
+{
+  if (chptr->geoip) return;
+  if (!chptr->plugin->cfg.countries_file) return;
+  chptr->geoip = GeoIP_open(chptr->plugin->cfg.countries_file,
+                            GEOIP_MEMORY_CACHE | GEOIP_CHECK_CACHE);
+}
+
+void src_country_handler(struct channels_list_entry *chptr, struct packet_ptrs *pptrs, char **data)
+{
+  struct pkt_data *pdata = (struct pkt_data *) *data;
+
+  init_geoip(chptr);
+  if (pdata->primitives.src_ip.family == AF_INET &&
+      pdata->primitives.src_ip.address.ipv4.s_addr != INADDR_ANY &&
+      chptr->geoip) {
+    pdata->primitives.src_country = GeoIP_id_by_ipnum(chptr->geoip,
+                                                      htonl(pdata->primitives.src_ip.address.ipv4.s_addr));
+  }
+}
+
+void src_country_handler_clear(struct channels_list_entry *chptr, struct packet_ptrs *pptrs, char **data)
+{
+  struct pkt_data *pdata = (struct pkt_data *) *data;
+  src_country_handler(chptr, pptrs, data);
+  memset(&pdata->primitives.src_ip, 0, sizeof(pdata->primitives.src_ip));
+}
+
+void dst_country_handler(struct channels_list_entry *chptr, struct packet_ptrs *pptrs, char **data)
+{
+  struct pkt_data *pdata = (struct pkt_data *) *data;
+
+  init_geoip(chptr);
+  if (pdata->primitives.dst_ip.family == AF_INET &&
+      pdata->primitives.dst_ip.address.ipv4.s_addr != INADDR_ANY &&
+      chptr->geoip) {
+    pdata->primitives.dst_country = GeoIP_id_by_ipnum(chptr->geoip,
+                                                      htonl(pdata->primitives.dst_ip.address.ipv4.s_addr));
+  }
+}
+
+void dst_country_handler_clear(struct channels_list_entry *chptr, struct packet_ptrs *pptrs, char **data)
+{
+  struct pkt_data *pdata = (struct pkt_data *) *data;
+  dst_country_handler(chptr, pptrs, data);
+  memset(&pdata->primitives.dst_ip, 0, sizeof(pdata->primitives.dst_ip));
+}
+#endif
 
 void ip_tos_handler(struct channels_list_entry *chptr, struct packet_ptrs *pptrs, char **data)
 {

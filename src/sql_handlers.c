@@ -126,6 +126,28 @@ void count_dst_host_handler(const struct db_cache *cache_elem, const struct inse
   *ptr_values += strlen(*ptr_values);
 }
 
+#ifdef WITH_GEOIP
+void count_src_country_handler(const struct db_cache *cache_elem, const struct insert_data *idata, int num, char **ptr_values, char **ptr_where)
+{
+  snprintf(*ptr_where, SPACELEFT(where_clause), where[num].string,
+           GeoIP_code_by_id(cache_elem->primitives.src_country));
+  snprintf(*ptr_values, SPACELEFT(values_clause), values[num].string,
+           GeoIP_code_by_id(cache_elem->primitives.src_country));
+  *ptr_where += strlen(*ptr_where);
+  *ptr_values += strlen(*ptr_values);
+}
+
+void count_dst_country_handler(const struct db_cache *cache_elem, const struct insert_data *idata, int num, char **ptr_values, char **ptr_where)
+{
+  snprintf(*ptr_where, SPACELEFT(where_clause), where[num].string,
+           GeoIP_code_by_id(cache_elem->primitives.dst_country));
+  snprintf(*ptr_values, SPACELEFT(values_clause), values[num].string,
+           GeoIP_code_by_id(cache_elem->primitives.dst_country));
+  *ptr_where += strlen(*ptr_where);
+  *ptr_values += strlen(*ptr_values);
+}
+#endif
+
 void count_dst_as_handler(const struct db_cache *cache_elem, const struct insert_data *idata, int num, char **ptr_values, char **ptr_where)
 {
   snprintf(*ptr_where, SPACELEFT(where_clause), where[num].string, cache_elem->primitives.dst_as);
@@ -469,6 +491,16 @@ void fake_host_handler(const struct db_cache *cache_elem, const struct insert_da
   *ptr_where += strlen(*ptr_where);
   *ptr_values += strlen(*ptr_values);
 }
+
+#ifdef WITH_GEOIP
+void fake_country_handler(const struct db_cache *cache_elem, const struct insert_data *idata, int num, char **ptr_values, char **ptr_where)
+{
+  snprintf(*ptr_where, SPACELEFT(where_clause), where[num].string, GeoIP_code_by_id(0));
+  snprintf(*ptr_values, SPACELEFT(values_clause), values[num].string, GeoIP_code_by_id(0));
+  *ptr_where += strlen(*ptr_where);
+  *ptr_values += strlen(*ptr_values);
+}
+#endif
 
 void fake_as_handler(const struct db_cache *cache_elem, const struct insert_data *idata, int num, char **ptr_values, char **ptr_where)
 {
