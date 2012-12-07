@@ -652,14 +652,13 @@ void P_cache_purge(struct chained_cache *queue[], int index)
 
       if (config.what_to_count_2 & COUNT_SAMPLING_RATE) fprintf(f, "%-7u       ", data->sampling_rate);
 #if defined HAVE_64BIT_COUNTERS
-      fprintf(f, "%-20llu  ", queue[j]->packet_counter);
-      fprintf(f, "%-20llu  ", queue[j]->flow_counter);
-      fprintf(f, "%llu\n", queue[j]->bytes_counter);
+      fprintf(f, "%-20"PRIpmcounter"  ", queue[j]->packet_counter);
+      fprintf(f, "%-20"PRIpmcounter"  ", queue[j]->flow_counter);
 #else
-      fprintf(f, "%-10lu  ", queue[j]->packet_counter);
-      fprintf(f, "%-10lu  ", queue[j]->flow_counter);
-      fprintf(f, "%lu\n", queue[j]->bytes_counter);
+      fprintf(f, "%-10"PRIpmcounter"  ", queue[j]->packet_counter);
+      fprintf(f, "%-10"PRIpmcounter"  ", queue[j]->flow_counter);
 #endif
+      fprintf(f, "%"PRIpmcounter"\n", queue[j]->bytes_counter);
     }
     else if (f && config.print_output == PRINT_OUTPUT_CSV) {
       if (config.what_to_count & COUNT_ID) fprintf(f, "%llu,", data->id);
@@ -753,15 +752,9 @@ void P_cache_purge(struct chained_cache *queue[], int index)
 #endif
 
       if (config.what_to_count_2 & COUNT_SAMPLING_RATE) fprintf(f, "%u,", data->sampling_rate);
-#if defined HAVE_64BIT_COUNTERS
-      fprintf(f, "%llu,", queue[j]->packet_counter);
-      fprintf(f, "%llu,", queue[j]->flow_counter);
-      fprintf(f, "%llu\n", queue[j]->bytes_counter);
-#else
-      fprintf(f, "%lu,", queue[j]->packet_counter);
-      fprintf(f, "%lu,", queue[j]->flow_counter);
-      fprintf(f, "%lu\n", queue[j]->bytes_counter);
-#endif
+      fprintf(f, "%"PRIpmcounter",", queue[j]->packet_counter);
+      fprintf(f, "%"PRIpmcounter",", queue[j]->flow_counter);
+      fprintf(f, "%"PRIpmcounter"\n", queue[j]->bytes_counter);
     }
   }
 

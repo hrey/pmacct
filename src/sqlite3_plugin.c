@@ -327,13 +327,11 @@ int SQLI_cache_dbop(struct DBdesc *db, struct db_cache *cache_elem, struct inser
 
   if (config.sql_dont_try_update || (sqlite3_changes(db->desc) == 0)) {
     /* UPDATE failed, trying with an INSERT query */ 
-#if defined HAVE_64BIT_COUNTERS
-    if (have_flows) snprintf(ptr_values, SPACELEFT(values_clause), ", %llu, %llu, %llu)", cache_elem->packet_counter, cache_elem->bytes_counter, cache_elem->flows_counter);
-    else snprintf(ptr_values, SPACELEFT(values_clause), ", %llu, %llu)", cache_elem->packet_counter, cache_elem->bytes_counter);
-#else
-    if (have_flows) snprintf(ptr_values, SPACELEFT(values_clause), ", %lu, %lu, %lu)", cache_elem->packet_counter, cache_elem->bytes_counter, cache_elem->flows_counter);
-    else snprintf(ptr_values, SPACELEFT(values_clause), ", %lu, %lu)", cache_elem->packet_counter, cache_elem->bytes_counter);
-#endif
+    if (have_flows) snprintf(ptr_values, SPACELEFT(values_clause),
+                             ", %"PRIpmcounter", %"PRIpmcounter", %"PRIpmcounter")",
+                             cache_elem->packet_counter, cache_elem->bytes_counter, cache_elem->flows_counter);
+    else snprintf(ptr_values, SPACELEFT(values_clause), ", %"PRIpmcounter", %"PRIpmcounter")",
+                  cache_elem->packet_counter, cache_elem->bytes_counter);
     
     strncpy(sql_data, insert_clause, sizeof(sql_data));
     strncat(sql_data, values_clause, SPACELEFT(sql_data));

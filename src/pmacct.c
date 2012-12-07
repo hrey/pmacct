@@ -1705,25 +1705,25 @@ int main(int argc,char **argv)
 	}
 
 #if defined HAVE_64BIT_COUNTERS
-	if (want_output == PRINT_OUTPUT_FORMATTED) printf("%-20llu  ", acc_elem->pkt_num);
-	else if (want_output == PRINT_OUTPUT_CSV) printf("%llu,", acc_elem->pkt_num);
+	if (want_output == PRINT_OUTPUT_FORMATTED) printf("%-20"PRIpmcounter"  ", acc_elem->pkt_num);
+	else if (want_output == PRINT_OUTPUT_CSV) printf("%"PRIpmcounter",", acc_elem->pkt_num);
 
 	if (!have_wtc || (what_to_count & COUNT_FLOWS)) {
-	  if (want_output == PRINT_OUTPUT_FORMATTED) printf("%-20llu  ", acc_elem->flo_num);
-	  else if (want_output == PRINT_OUTPUT_CSV) printf("%llu,", acc_elem->flo_num);
+	  if (want_output == PRINT_OUTPUT_FORMATTED) printf("%-20"PRIpmcounter"  ", acc_elem->flo_num);
+	  else if (want_output == PRINT_OUTPUT_CSV) printf("%"PRIpmcounter",", acc_elem->flo_num);
 	}
 
-	printf("%llu\n", acc_elem->pkt_len);
+	printf("%"PRIpmcounter"\n", acc_elem->pkt_len);
 #else
-        if (want_output == PRINT_OUTPUT_FORMATTED) printf("%-10lu  ", acc_elem->pkt_num); 
-        else if (want_output == PRINT_OUTPUT_CSV) printf("%lu,", acc_elem->pkt_num); 
+        if (want_output == PRINT_OUTPUT_FORMATTED) printf("%-10"PRIpmcounter"  ", acc_elem->pkt_num); 
+        else if (want_output == PRINT_OUTPUT_CSV) printf("%"PRIpmcounter",", acc_elem->pkt_num); 
 
         if (!have_wtc || (what_to_count & COUNT_FLOWS)) {
-	  if (want_output == PRINT_OUTPUT_FORMATTED) printf("%-10lu  ", acc_elem->flo_num); 
-	  else if (want_output == PRINT_OUTPUT_CSV) printf("%lu,", acc_elem->flo_num); 
+	  if (want_output == PRINT_OUTPUT_FORMATTED) printf("%-10"PRIpmcounter"  ", acc_elem->flo_num); 
+	  else if (want_output == PRINT_OUTPUT_CSV) printf("%"PRIpmcounter",", acc_elem->flo_num); 
 	}
 
-        printf("%lu\n", acc_elem->pkt_len); 
+        printf("%"PRIpmcounter"\n", acc_elem->pkt_len); 
 #endif
         counter++;
       }
@@ -1778,36 +1778,22 @@ int main(int argc,char **argv)
 	num_counters += acc_elem->time_start.tv_sec; /* XXX: this field is used here to count how much entries we are accumulating */
       }
       else {
-#if defined HAVE_64BIT_COUNTERS
 	/* print bytes */
-        if (which_counter == 0) printf("%llu\n", acc_elem->pkt_len); 
+        if (which_counter == 0) printf("%"PRIpmcounter"\n", acc_elem->pkt_len); 
 	/* print packets */
-	else if (which_counter == 1) printf("%llu\n", acc_elem->pkt_num); 
+	else if (which_counter == 1) printf("%"PRIpmcounter"\n", acc_elem->pkt_num); 
 	/* print packets+bytes+flows+num */
-	else if (which_counter == 2) printf("%llu %llu %llu %lu\n", acc_elem->pkt_num, acc_elem->pkt_len, acc_elem->flo_num, acc_elem->time_start.tv_sec);
+	else if (which_counter == 2) printf("%"PRIpmcounter" %"PRIpmcounter" %"PRIpmcounter" %lu\n", acc_elem->pkt_num, acc_elem->pkt_len, acc_elem->flo_num, acc_elem->time_start.tv_sec);
 	/* print flows */
-	else if (which_counter == 3) printf("%llu\n", acc_elem->flo_num);
-#else
-        if (which_counter == 0) printf("%lu\n", acc_elem->pkt_len); 
-        else if (which_counter == 1) printf("%lu\n", acc_elem->pkt_num); 
-        else if (which_counter == 2) printf("%lu %lu %lu %lu\n", acc_elem->pkt_num, acc_elem->pkt_len, acc_elem->flo_num, acc_elem->time_start.tv_sec); 
-        else if (which_counter == 3) printf("%lu\n", acc_elem->flo_num); 
-#endif
+	else if (which_counter == 3) printf("%"PRIpmcounter"\n", acc_elem->flo_num);
       }
     }
       
     if (sum_counters) {
-#if defined HAVE_64BIT_COUNTERS
-      if (which_counter == 0) printf("%llu\n", bcnt); /* print bytes */
-      else if (which_counter == 1) printf("%llu\n", pcnt); /* print packets */
-      else if (which_counter == 2) printf("%llu %llu %llu %u\n", pcnt, bcnt, fcnt, num_counters); /* print packets+bytes+flows+num */
-      else if (which_counter == 3) printf("%llu\n", fcnt); /* print flows */
-#else
-      if (which_counter == 0) printf("%lu\n", bcnt); 
-      else if (which_counter == 1) printf("%lu\n", pcnt); 
-      else if (which_counter == 2) printf("%lu %lu %lu %u\n", pcnt, bcnt, fcnt, num_counters); 
-      else if (which_counter == 3) printf("%lu\n", fcnt); 
-#endif
+      if (which_counter == 0) printf("%"PRIpmcounter"\n", bcnt); /* print bytes */
+      else if (which_counter == 1) printf("%"PRIpmcounter"\n", pcnt); /* print packets */
+      else if (which_counter == 2) printf("%"PRIpmcounter" %"PRIpmcounter" %"PRIpmcounter" %u\n", pcnt, bcnt, fcnt, num_counters); /* print packets+bytes+flows+num */
+      else if (which_counter == 3) printf("%"PRIpmcounter"\n", fcnt); /* print flows */
     }
   }
   else if (want_class_table) { 

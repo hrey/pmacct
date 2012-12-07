@@ -2321,33 +2321,19 @@ int sql_compose_static_set(int have_flows)
 {
   int set_primitives=0;
 
-#if defined HAVE_64BIT_COUNTERS
-  strncpy(set[set_primitives].string, "SET packets=packets+%llu, bytes=bytes+%llu", SPACELEFT(set[set_primitives].string));
+  strncpy(set[set_primitives].string, "SET packets=packets+%"PRIpmcounter", bytes=bytes+%"PRIpmcounter,
+          SPACELEFT(set[set_primitives].string));
   set[set_primitives].type = COUNT_COUNTERS;
   set[set_primitives].handler = count_counters_setclause_handler;
   set_primitives++;
 
   if (have_flows) {
     strncpy(set[set_primitives].string, ", ", SPACELEFT(set[set_primitives].string));
-    strncat(set[set_primitives].string, "flows=flows+%llu", SPACELEFT(set[set_primitives].string));
+    strncat(set[set_primitives].string, "flows=flows+%"PRIpmcounter, SPACELEFT(set[set_primitives].string));
     set[set_primitives].type = COUNT_FLOWS;
     set[set_primitives].handler = count_flows_setclause_handler;
     set_primitives++;
   }
-#else
-  strncpy(set[set_primitives].string, "SET packets=packets+%u, bytes=bytes+%u", SPACELEFT(set[set_primitives].string));
-  set[set_primitives].type = COUNT_COUNTERS;
-  set[set_primitives].handler = count_counters_setclause_handler;
-  set_primitives++;
-
-  if (have_flows) {
-    strncpy(set[set_primitives].string, ", ", SPACELEFT(set[set_primitives].string));
-    strncat(set[set_primitives].string, "flows=flows+%u", SPACELEFT(set[set_primitives].string));
-    set[set_primitives].type = COUNT_FLOWS;
-    set[set_primitives].handler = count_flows_setclause_handler;
-    set_primitives++;
-  }
-#endif
 
   if (config.what_to_count & COUNT_TCPFLAGS) {
     strncpy(set[set_primitives].string, ", ", SPACELEFT(set[set_primitives].string));

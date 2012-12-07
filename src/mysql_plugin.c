@@ -319,13 +319,13 @@ int MY_cache_dbop(struct DBdesc *db, struct db_cache *cache_elem, struct insert_
   for (num = 0; set[num].type; num++)
     (*set[num].handler)(cache_elem, idata, num, &ptr_set, NULL);
 
-#if defined HAVE_64BIT_COUNTERS
-    if (have_flows) snprintf(ptr_values, SPACELEFT(values_clause), ", %llu, %llu, %llu)", cache_elem->packet_counter, cache_elem->bytes_counter, cache_elem->flows_counter);
-    else snprintf(ptr_values, SPACELEFT(values_clause), ", %llu, %llu)", cache_elem->packet_counter, cache_elem->bytes_counter);
-#else
-    if (have_flows) snprintf(ptr_values, SPACELEFT(values_clause), ", %lu, %lu, %lu)", cache_elem->packet_counter, cache_elem->bytes_counter, cache_elem->flows_counter);
-    else snprintf(ptr_values, SPACELEFT(values_clause), ", %lu, %lu)", cache_elem->packet_counter, cache_elem->bytes_counter);
-#endif
+  if (have_flows) snprintf(ptr_values, SPACELEFT(values_clause),
+                           ", %"PRIpmcounter", %"PRIpmcounter", %"PRIpmcounter")",
+                           cache_elem->packet_counter, cache_elem->bytes_counter,
+                           cache_elem->flows_counter);
+  else snprintf(ptr_values,
+                SPACELEFT(values_clause), ", %"PRIpmcounter", %"PRIpmcounter")",
+                cache_elem->packet_counter, cache_elem->bytes_counter);
   
   /* sending UPDATE query. Use an INSERT ... ON DUPLICATE KEY UPDATE ... */
   if (!config.sql_dont_try_update) {

@@ -311,19 +311,15 @@ int PG_cache_dbop_copy(struct DBdesc *db, struct db_cache *cache_elem, struct in
     num++;
   }
 
-#if defined HAVE_64BIT_COUNTERS
-  if (have_flows) snprintf(ptr_values, SPACELEFT(values_clause), "%s%llu%s%llu%s%llu\n", delim_buf, cache_elem->packet_counter,
-											delim_buf, cache_elem->bytes_counter,
-											delim_buf, cache_elem->flows_counter);
-  else snprintf(ptr_values, SPACELEFT(values_clause), "%s%llu%s%llu\n", delim_buf, cache_elem->packet_counter,
-									delim_buf, cache_elem->bytes_counter);
-#else
-  if (have_flows) snprintf(ptr_values, SPACELEFT(values_clause), "%s%lu%s%lu%s%lu\n", delim_buf, cache_elem->packet_counter,
-											delim_buf, cache_elem->bytes_counter,
-											delim_buf, cache_elem->flows_counter);
-  else snprintf(ptr_values, SPACELEFT(values_clause), "%s%lu%s%lu\n", delim_buf, cache_elem->packet_counter,
-									delim_buf, cache_elem->bytes_counter);
-#endif
+  if (have_flows) snprintf(ptr_values, SPACELEFT(values_clause),
+                           "%s%"PRIpmcounter"%s%"PRIpmcounter"%s%"PRIpmcounter"\n",
+                           delim_buf, cache_elem->packet_counter,
+                           delim_buf, cache_elem->bytes_counter,
+                           delim_buf, cache_elem->flows_counter);
+  else snprintf(ptr_values, SPACELEFT(values_clause),
+                "%s%"PRIpmcounter"%s%"PRIpmcounter"\n",
+                delim_buf, cache_elem->packet_counter,
+                delim_buf, cache_elem->bytes_counter);
   strncpy(sql_data, values_clause, sizeof(sql_data));
   
   if (PQputCopyData(db->desc, sql_data, strlen(sql_data)) < 0) { // avoid strlen() 
@@ -386,13 +382,12 @@ int PG_cache_dbop(struct DBdesc *db, struct db_cache *cache_elem, struct insert_
   if (config.sql_dont_try_update || (!PG_affected_rows(ret))) {
     /* UPDATE failed, trying with an INSERT query */ 
     strncpy(sql_data, insert_clause, sizeof(sql_data));
-#if defined HAVE_64BIT_COUNTERS
-    if (have_flows) snprintf(ptr_values, SPACELEFT(values_clause), ", %llu, %llu, %llu)", cache_elem->packet_counter, cache_elem->bytes_counter, cache_elem->flows_counter);
-    else snprintf(ptr_values, SPACELEFT(values_clause), ", %llu, %llu)", cache_elem->packet_counter, cache_elem->bytes_counter);
-#else
-    if (have_flows) snprintf(ptr_values, SPACELEFT(values_clause), ", %lu, %lu, %lu)", cache_elem->packet_counter, cache_elem->bytes_counter, cache_elem->flows_counter);
-    else snprintf(ptr_values, SPACELEFT(values_clause), ", %lu, %lu)", cache_elem->packet_counter, cache_elem->bytes_counter);
-#endif
+    if (have_flows) snprintf(ptr_values, SPACELEFT(values_clause),
+                             ", %"PRIpmcounter", %"PRIpmcounter", %"PRIpmcounter")",
+                             cache_elem->packet_counter, cache_elem->bytes_counter,
+                             cache_elem->flows_counter);
+    else snprintf(ptr_values, SPACELEFT(values_clause), ", %"PRIpmcounter", %"PRIpmcounter")",
+                  cache_elem->packet_counter, cache_elem->bytes_counter);
     strncat(sql_data, values_clause, SPACELEFT(sql_data));
 
     ret = PQexec(db->desc, sql_data);

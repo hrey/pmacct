@@ -19,6 +19,8 @@
     Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
+#include <inttypes.h>
+
 /* defines */
 #define ARGS_NFACCTD "n:dDhP:b:f:F:c:m:p:r:s:S:L:l:v:o:O:uR"
 #define ARGS_SFACCTD "n:dDhP:b:f:F:c:m:p:r:s:S:L:l:v:o:O:uR"
@@ -284,8 +286,10 @@ typedef u_int32_t pm_country_t;
 
 #if defined HAVE_64BIT_COUNTERS
 typedef u_int64_t pm_counter_t;
+#define PRIpmcounter PRIu64
 #else
 typedef u_int32_t pm_counter_t;
+#define PRIpmcounter PRIu32
 #endif
 
 /* Keep common NF_AS and NF_NET values aligned, ie. NF_[NET|AS]_KEEP == 0x00000001 */
