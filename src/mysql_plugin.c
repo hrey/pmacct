@@ -318,19 +318,7 @@ int MY_cache_dbop(struct DBdesc *db, struct db_cache *cache_elem, struct insert_
 
   for (num = 0; set[num].type; num++)
     (*set[num].handler)(cache_elem, idata, num, &ptr_set, NULL);
-  
-  /* sending UPDATE query */
-  if (!config.sql_dont_try_update) {
-    strncpy(sql_data, update_clause, SPACELEFT(sql_data));
-    strncat(sql_data, set_clause, SPACELEFT(sql_data));
-    strncat(sql_data, where_clause, SPACELEFT(sql_data));
 
-    ret = mysql_query(db->desc, sql_data);
-    if (ret) goto signal_error; 
-  }
-
-  if (config.sql_dont_try_update || (mysql_affected_rows(db->desc) == 0)) {
-    /* UPDATE failed, trying with an INSERT query */ 
 #if defined HAVE_64BIT_COUNTERS
     if (have_flows) snprintf(ptr_values, SPACELEFT(values_clause), ", %llu, %llu, %llu)", cache_elem->packet_counter, cache_elem->bytes_counter, cache_elem->flows_counter);
     else snprintf(ptr_values, SPACELEFT(values_clause), ", %llu, %llu)", cache_elem->packet_counter, cache_elem->bytes_counter);
@@ -338,7 +326,20 @@ int MY_cache_dbop(struct DBdesc *db, struct db_cache *cache_elem, struct insert_
     if (have_flows) snprintf(ptr_values, SPACELEFT(values_clause), ", %lu, %lu, %lu)", cache_elem->packet_counter, cache_elem->bytes_counter, cache_elem->flows_counter);
     else snprintf(ptr_values, SPACELEFT(values_clause), ", %lu, %lu)", cache_elem->packet_counter, cache_elem->bytes_counter);
 #endif
+  
+  /* sending UPDATE query. Use an INSERT ... ON DUPLICATE KEY UPDATE ... */
+  if (!config.sql_dont_try_update) {
+    strncpy(sql_data, insert_clause, sizeof(sql_data));
+    strncat(sql_data, values_clause, SPACELEFT(sql_data));
+    strncat(sql_data, " ON DUPLICATE KEY UPDATE ", SPACELEFT(sql_data));
+    strncat(sql_data, set_clause + 4, SPACELEFT(sql_data)); /* SET clause without "SET " */
 
+    ret = mysql_query(db->desc, sql_data);
+    if (ret) goto signal_error; 
+  }
+
+  if (config.sql_dont_try_update || (mysql_affected_rows(db->desc) == 0)) {
+    /* UPDATE failed, trying with an INSERT query */ 
     if (config.sql_multi_values) { 
       multi_values_handling:
       if (!idata->mv.buffer_elem_num) {
