@@ -475,7 +475,7 @@ int main(int argc,char **argv, char **envp)
   }
 
   /* bind socket to port */
-  rc = Setsocksize(config.sock, SOL_SOCKET, SO_REUSEADDR, (char *)&yes, sizeof(yes));
+  rc = setsockopt(config.sock, SOL_SOCKET, SO_REUSEADDR, (char *)&yes, sizeof(yes));
   if (rc < 0) Log(LOG_ERR, "WARN ( default/core ): Setsocksize() failed for SO_REUSEADDR.\n");
 
   if (config.pipe_size) {
